@@ -381,8 +381,13 @@ vaccine &lt;- read.csv(&quot;WorldwideVaccineData.csv&quot;)</code></pre>
 <div id="exploring-the-datasets" class="section level2">
 <h2>Exploring the datasets</h2>
 <p><strong>Covid-data.csv</strong></p>
+<pre class="r"><code>cat(&quot;Number of rows:&quot;, nrow(covid), &quot;\n&quot;)</code></pre>
 <pre><code>## Number of rows: 1575</code></pre>
+<pre class="r"><code>cat(&quot;Number of columns:&quot;, ncol(covid), &quot;\n&quot;)</code></pre>
 <pre><code>## Number of columns: 8</code></pre>
+<pre class="r"><code>cat(&quot;Number of missing values:&quot;, sum(is.na(covid)), &quot;\n&quot;)</code></pre>
+<pre><code>## Number of missing values: 13</code></pre>
+<pre class="r"><code>knitr::kable(head(covid), caption = &quot;First 6 rows of the dataset&quot;)</code></pre>
 <table>
 <caption>First 6 rows of the dataset</caption>
 <colgroup>
@@ -470,7 +475,9 @@ vaccine &lt;- read.csv(&quot;WorldwideVaccineData.csv&quot;)</code></pre>
 </tr>
 </tbody>
 </table>
+<pre class="r"><code>cat(&quot;Structure of the dataset:\n&quot;)</code></pre>
 <pre><code>## Structure of the dataset:</code></pre>
+<pre class="r"><code>str(covid)</code></pre>
 <pre><code>## &#39;data.frame&#39;:    1575 obs. of  8 variables:
 ##  $ location      : chr  &quot;Australia&quot; &quot;Australia&quot; &quot;Australia&quot; &quot;Australia&quot; ...
 ##  $ date          : chr  &quot;2019-12-31&quot; &quot;2020-01-01&quot; &quot;2020-01-02&quot; &quot;2020-01-03&quot; ...
@@ -480,7 +487,9 @@ vaccine &lt;- read.csv(&quot;WorldwideVaccineData.csv&quot;)</code></pre>
 ##  $ new_deaths    : int  0 0 0 0 0 0 0 0 0 0 ...
 ##  $ gdp_per_capita: num  44649 44649 44649 44649 44649 ...
 ##  $ population    : int  25499881 25499881 25499881 25499881 25499881 25499881 25499881 25499881 25499881 25499881 ...</code></pre>
+<pre class="r"><code>cat(&quot;Summary of the dataset:\n&quot;)</code></pre>
 <pre><code>## Summary of the dataset:</code></pre>
+<pre class="r"><code>summary(covid)</code></pre>
 <pre><code>##    location             date            total_cases          new_cases     
 ##  Length:1575        Length:1575        Min.   :      0.0   Min.   :-29726  
 ##  Class :character   Class :character   1st Qu.:     21.5   1st Qu.:     1  
@@ -498,8 +507,13 @@ vaccine &lt;- read.csv(&quot;WorldwideVaccineData.csv&quot;)</code></pre>
 ##  Max.   :135605   Max.   : 4928.0   Max.   :54225   Max.   :1.439e+09  
 ##  NA&#39;s   :6        NA&#39;s   :7</code></pre>
 <p><strong>CountryLockdowndates.csv</strong></p>
+<pre class="r"><code>cat(&quot;Number of rows:&quot;, nrow(lockdown), &quot;\n&quot;)</code></pre>
 <pre><code>## Number of rows: 307</code></pre>
+<pre class="r"><code>cat(&quot;Number of columns:&quot;, ncol(lockdown), &quot;\n&quot;)</code></pre>
 <pre><code>## Number of columns: 5</code></pre>
+<pre class="r"><code>cat(&quot;Number of missing values:&quot;, sum(is.na(lockdown)), &quot;\n&quot;)</code></pre>
+<pre><code>## Number of missing values: 0</code></pre>
+<pre class="r"><code>knitr::kable(head(lockdown), caption = &quot;First 6 rows of the dataset&quot;)</code></pre>
 <table>
 <caption>First 6 rows of the dataset</caption>
 <colgroup>
@@ -563,14 +577,18 @@ vaccine &lt;- read.csv(&quot;WorldwideVaccineData.csv&quot;)</code></pre>
 </tr>
 </tbody>
 </table>
+<pre class="r"><code>cat(&quot;Structure of the dataset:\n&quot;)</code></pre>
 <pre><code>## Structure of the dataset:</code></pre>
+<pre class="r"><code>str(lockdown)</code></pre>
 <pre><code>## &#39;data.frame&#39;:    307 obs. of  5 variables:
 ##  $ Country.Region: chr  &quot;Afghanistan&quot; &quot;Albania&quot; &quot;Algeria&quot; &quot;Andorra&quot; ...
 ##  $ Province      : chr  &quot;&quot; &quot;&quot; &quot;&quot; &quot;&quot; ...
 ##  $ Date          : chr  &quot;24/03/2020&quot; &quot;08/03/2020&quot; &quot;24/03/2020&quot; &quot;16/03/2020&quot; ...
 ##  $ Type          : chr  &quot;Full&quot; &quot;Full&quot; &quot;Full&quot; &quot;Full&quot; ...
 ##  $ Reference     : chr  &quot;https://www.thestatesman.com/world/afghan-govt-imposes-lockdown-coronavirus-cases-increase-15-1502870945.html&quot; &quot;https://en.wikipedia.org/wiki/2020_coronavirus_pandemic_in_Albania&quot; &quot;https://www.garda.com/crisis24/news-alerts/325896/algeria-government-implements-lockdown-and-curfew-in-blida-an&quot;| __truncated__ &quot;https://en.wikipedia.org/wiki/2020_coronavirus_pandemic_in_Andorra&quot; ...</code></pre>
+<pre class="r"><code>cat(&quot;Summary of the dataset:\n&quot;)</code></pre>
 <pre><code>## Summary of the dataset:</code></pre>
+<pre class="r"><code>summary(lockdown)</code></pre>
 <pre><code>##  Country.Region       Province             Date               Type          
 ##  Length:307         Length:307         Length:307         Length:307        
 ##  Class :character   Class :character   Class :character   Class :character  
@@ -580,8 +598,13 @@ vaccine &lt;- read.csv(&quot;WorldwideVaccineData.csv&quot;)</code></pre>
 ##  Class :character  
 ##  Mode  :character</code></pre>
 <p><strong>WorldwideVaccineData.csv</strong></p>
+<pre class="r"><code>cat(&quot;Number of rows:&quot;, nrow(vaccine), &quot;\n&quot;)</code></pre>
 <pre><code>## Number of rows: 187</code></pre>
+<pre class="r"><code>cat(&quot;Number of columns:&quot;, ncol(vaccine), &quot;\n&quot;)</code></pre>
 <pre><code>## Number of columns: 5</code></pre>
+<pre class="r"><code>cat(&quot;Number of missing values:&quot;, sum(is.na(vaccine)), &quot;\n&quot;)</code></pre>
+<pre><code>## Number of missing values: 0</code></pre>
+<pre class="r"><code>knitr::kable(head(vaccine), caption = &quot;First 6 rows of the dataset&quot;)</code></pre>
 <table style="width:100%;">
 <caption>First 6 rows of the dataset</caption>
 <colgroup>
@@ -645,13 +668,16 @@ vaccine &lt;- read.csv(&quot;WorldwideVaccineData.csv&quot;)</code></pre>
 </tr>
 </tbody>
 </table>
+<pre class="r"><code>cat(&quot;Structure of the dataset:\n&quot;)</code></pre>
 <pre><code>## Structure of the dataset:</code></pre>
+<pre class="r"><code>str(vaccine)</code></pre>
 <pre><code>## &#39;data.frame&#39;:    187 obs. of  5 variables:
 ##  $ Country                          : chr  &quot;Afghanistan&quot; &quot;Albania&quot; &quot;Algeria&quot; &quot;Angola&quot; ...
 ##  $ Doses.administered.per.100.people: int  17 102 35 64 237 73 162 229 207 137 ...
 ##  $ Total.doses.administered         : num  6.45e+06 2.91e+06 1.52e+07 2.04e+07 1.06e+08 ...
 ##  $ X..of.population.vaccinated      : num  15 46 19 41 92 38 84 88 77 53 ...
 ##  $ X..of.population.fully.vaccinated: num  13 44 16 22 84 33 78 86 75 48 ...</code></pre>
+<pre class="r"><code>summary(vaccine)</code></pre>
 <pre><code>##    Country          Doses.administered.per.100.people Total.doses.administered
 ##  Length:187         Min.   :  0                       Min.   :1.714e+04       
 ##  Class :character   1st Qu.: 62                       1st Qu.:1.810e+06       
@@ -666,6 +692,67 @@ vaccine &lt;- read.csv(&quot;WorldwideVaccineData.csv&quot;)</code></pre>
 ##  Mean   :56.91               Mean   :51.94                    
 ##  3rd Qu.:80.00               3rd Qu.:75.00                    
 ##  Max.   :99.00               Max.   :99.00</code></pre>
+<div id="wrangle-the-datasets" class="section level3">
+<h3>Wrangle the datasets</h3>
+<p>Deal with missing values, or wrong values such as negative values for
+new cases, deaths, vaccinated, etc., using KNN imputation. From the
+exploration above, only covid has missing values, so we will only impute
+that dataset using K Nearest Neighbors (KNN). By using KNN, we can fill
+in the missing values based on the values of the nearest neighbors in
+the dataset, allowing us keep the rest of the data for those
+entries.</p>
+<pre class="r"><code>library(impute)
+library(dplyr)
+library(magrittr)
+
+cat(&quot;Number of missing values before imputation:&quot;, sum(is.na(covid)), &quot;\n&quot;)</code></pre>
+<pre><code>## Number of missing values before imputation: 13</code></pre>
+<pre class="r"><code># Impute missing values using KNN
+covid_imputed &lt;- covid %&gt;%
+  select(where(is.numeric)) %&gt;%
+  as.matrix() %&gt;%
+  impute.knn(k = 5) %&gt;%
+  .$data %&gt;%
+  as.data.frame()</code></pre>
+<pre><code>## Cluster size 1575 broken into 1378 197 
+## Done cluster 1378 
+## Done cluster 197</code></pre>
+<pre class="r"><code>cat(&quot;Number of missing values after imputation:&quot;, sum(is.na(covid_imputed)), &quot;\n&quot;)</code></pre>
+<pre><code>## Number of missing values after imputation: 0</code></pre>
+<p>We also want to remove any negative values from the dataset as they
+are not valid in some of the available features. First, let’s check if
+there are indeed any entries that have such values.
+<strong>Covid-data.csv</strong></p>
+<pre class="r"><code># Check for negative values in the dataset
+covid_imputed %&gt;%
+  select(where(is.numeric)) %&gt;%
+  summarise(across(everything(), ~ any(. &lt; 0))) %&gt;%
+  print()</code></pre>
+<pre><code>##   total_cases new_cases total_deaths new_deaths gdp_per_capita population
+## 1       FALSE      TRUE        FALSE       TRUE          FALSE      FALSE</code></pre>
+<p>In this case, new_cases and new_deaths are the only columns that have
+negative values, but those values are not valid. We will remove any rows
+that have negative values in those columns.</p>
+<pre class="r"><code># Remove rows with negative values in new_cases and new_deaths
+cat(&quot;Number of rows before removing negative values:&quot;, nrow(covid_imputed), &quot;\n&quot;)</code></pre>
+<pre><code>## Number of rows before removing negative values: 1575</code></pre>
+<pre class="r"><code>covid_imputed &lt;- covid_imputed %&gt;%
+  filter(new_cases &gt;= 0 &amp; new_deaths &gt;= 0)
+cat(&quot;Number of rows after removing negative values:&quot;, nrow(covid_imputed), &quot;\n&quot;)</code></pre>
+<pre><code>## Number of rows after removing negative values: 1568</code></pre>
+<p>Since CountryLockdowndates.csv doesn’t have numerical values we
+proceed to WorldwideVaccineData.csv.
+<strong>WorldwideVaccineData.csv</strong></p>
+<pre class="r"><code># Check for negative values in the dataset
+vaccine %&gt;%
+  select(where(is.numeric)) %&gt;%
+  summarise(across(everything(), ~ any(. &lt; 0))) %&gt;%
+  print()</code></pre>
+<pre><code>##   Doses.administered.per.100.people Total.doses.administered
+## 1                             FALSE                    FALSE
+##   X..of.population.vaccinated X..of.population.fully.vaccinated
+## 1                       FALSE                             FALSE</code></pre>
+</div>
 </div>
 </div>
 

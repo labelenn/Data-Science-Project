@@ -3,12 +3,12 @@ title: "Part A, Topic 1 - COVID-19"
 author: "Lance Belen"
 date: "`r Sys.Date()`"
 output:
-  html_document: default
   pdf_document:
     includes:
       in_header: header.tex
     toc: true
     number_sections: true
+  html_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -34,7 +34,7 @@ vaccine <- read.csv("WorldwideVaccineData.csv")
 
 ## Exploring the datasets
 **Covid-data.csv**
-```{r covid-data, echo=FALSE, message=TRUE, warning=FALSE}
+```{r covid-data, echo=TRUE, message=TRUE, warning=FALSE}
 cat("Number of rows:", nrow(covid), "\n")
 cat("Number of columns:", ncol(covid), "\n")
 cat("Number of missing values:", sum(is.na(covid)), "\n")
@@ -47,7 +47,7 @@ summary(covid)
 \vspace{1cm}
 
 **CountryLockdowndates.csv**
-```{r lockdown-data, echo=FALSE, message=TRUE, warning=FALSE}
+```{r lockdown-data, echo=TRUE, message=TRUE, warning=FALSE}
 cat("Number of rows:", nrow(lockdown), "\n")
 cat("Number of columns:", ncol(lockdown), "\n")
 cat("Number of missing values:", sum(is.na(lockdown)), "\n")
@@ -60,12 +60,78 @@ summary(lockdown)
 \vspace{1cm}
 
 **WorldwideVaccineData.csv**
-```{r vaccine-data, echo=FALSE, message=TRUE, warning=FALSE}
+```{r vaccine-data, echo=TRUE, message=TRUE, warning=FALSE}
 cat("Number of rows:", nrow(vaccine), "\n")
 cat("Number of columns:", ncol(vaccine), "\n")
-cat("Number of missing values:", sum(is.na(vaccine)), "\n")e
+cat("Number of missing values:", sum(is.na(vaccine)), "\n")
 knitr::kable(head(vaccine), caption = "First 6 rows of the dataset")
 cat("Structure of the dataset:\n")
 str(vaccine)
 summary(vaccine)
+```
+\vspace{2cm}
+
+## Wrangling the datasets
+Deal with missing values, or wrong values such as negative values for new cases, deaths, vaccinated, etc., using KNN imputation.
+From the exploration above, only covid has missing values, so we will only impute that dataset using K Nearest Neighbors (KNN).
+By using KNN, we can fill in the missing values based on the values of the nearest neighbors in the dataset, allowing us keep the rest of the data for those entries.
+```{r knn-imputation, echo=TRUE, message=FALSE, warning=FALSE}
+library(impute)
+library(dplyr)
+library(magrittr)
+
+cat("Number of missing values before imputation:", sum(is.na(covid)), "\n")
+
+covid_imputed <- covid %>%
+  select(where(is.numeric)) %>%
+  as.matrix() %>%
+  impute.knn(k = 5) %>%
+  .$data %>%
+  as.data.frame()
+
+covid[, colnames(covid_imputed)] <- covid_imputed
+
+cat("Number of missing values after imputation:", sum(is.na(covid)), "\n")
+```
+\vspace{1cm}
+
+We also want to remove any negative values from the dataset as they are not valid in some of the available features.
+First, let's check if there are indeed any entries that have such values.
+**Covid-data.csv**
+```{r check-negative-values-covid, echo=TRUE, message=FALSE, warning=FALSE}
+covid %>%
+  select(where(is.numeric)) %>%
+  summarise(across(everything(), ~ any(. < 0))) %>%
+  print()
+```
+
+In this case, new_cases and new_deaths are the only columns that have negative values, but those values are not valid.
+We will remove any rows that have negative values in those columns.
+```{r remove-negative-values-covid, echo=TRUE, message=FALSE, warning=FALSE}
+cat("Number of rows before removing negative values:", nrow(covid), "\n")
+covid <- covid %>%
+  filter(new_cases >= 0 & new_deaths >= 0)
+cat("Number of rows after removing negative values:", nrow(covid), "\n")
+```
+
+\vspace{1cm}
+Since CountryLockdowndates.csv doesn't have numerical values we proceed to WorldwideVaccineData.csv.
+**WorldwideVaccineData.csv**
+```{r check-negative-values-vaccine, echo=TRUE, message=FALSE, warning=FALSE}
+vaccine %>%
+  select(where(is.numeric)) %>%
+  summarise(across(everything(), ~ any(. < 0))) %>%
+  print()
+```
+We can confirm that there are no negative values in this dataset, so no further action is needed.
+\vspace{1cm}
+
+## Integrating the datasets
+Now that we have cleaned the datasets, we can integrate them into one dataset. Firstly, the date attributes are in different formats for Covid-data.csv and CountryLockdowndates.csv, so we need to convert them to the same format.
+```{r date-formatting, echo=TRUE, message=FALSE, warning=FALSE}
+covid$date <- as.Date(covid$date, format = "%Y-%m-%d")
+lockdown$Date <- as.Date(lockdown$Date, format = "%d/%m/%Y")
+
+cat("Covid-data.csv date format:\n", head(covid$date))
+cat("CountryLockdowndates.csv date format:\n", head(lockdown$Date))
 ```

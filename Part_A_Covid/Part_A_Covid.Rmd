@@ -1,0 +1,71 @@
+---
+title: "Part A, Topic 1 - COVID-19"
+author: "Lance Belen"
+date: "`r Sys.Date()`"
+output:
+  html_document: default
+  pdf_document:
+    includes:
+      in_header: header.tex
+    toc: true
+    number_sections: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+\newpage
+# Data Wrangling and Integration
+
+First, load the packages needed.
+```{r load-packages, echo=TRUE, message=TRUE, warning=FALSE}
+library(readxl)
+library(ggplot2)
+library(tidyverse)
+```
+
+Then, read and open the three datasets, Covid-data.csv, CountryLockdowndates.csv and WorldwideVaccineData.csv
+```{r read-datasets, echo=TRUE, message=TRUE, warning=FALSE}
+covid <- read.csv("Covid-data.csv")
+lockdown <- read.csv("CountryLockdowndates.csv")
+vaccine <- read.csv("WorldwideVaccineData.csv")
+```
+
+## Exploring the datasets
+**Covid-data.csv**
+```{r covid-data, echo=FALSE, message=TRUE, warning=FALSE}
+cat("Number of rows:", nrow(covid), "\n")
+cat("Number of columns:", ncol(covid), "\n")
+cat("Number of missing values:", sum(is.na(covid)), "\n")
+knitr::kable(head(covid), caption = "First 6 rows of the dataset")
+cat("Structure of the dataset:\n")
+str(covid)
+cat("Summary of the dataset:\n")
+summary(covid)
+```
+\vspace{1cm}
+
+**CountryLockdowndates.csv**
+```{r lockdown-data, echo=FALSE, message=TRUE, warning=FALSE}
+cat("Number of rows:", nrow(lockdown), "\n")
+cat("Number of columns:", ncol(lockdown), "\n")
+cat("Number of missing values:", sum(is.na(lockdown)), "\n")
+knitr::kable(head(lockdown), caption = "First 6 rows of the dataset")
+cat("Structure of the dataset:\n")
+str(lockdown)
+cat("Summary of the dataset:\n")
+summary(lockdown)
+```
+\vspace{1cm}
+
+**WorldwideVaccineData.csv**
+```{r vaccine-data, echo=FALSE, message=TRUE, warning=FALSE}
+cat("Number of rows:", nrow(vaccine), "\n")
+cat("Number of columns:", ncol(vaccine), "\n")
+cat("Number of missing values:", sum(is.na(vaccine)), "\n")e
+knitr::kable(head(vaccine), caption = "First 6 rows of the dataset")
+cat("Structure of the dataset:\n")
+str(vaccine)
+summary(vaccine)
+```

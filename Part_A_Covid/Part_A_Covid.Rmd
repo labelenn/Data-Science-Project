@@ -32,7 +32,7 @@ lockdown <- read.csv("CountryLockdowndates.csv")
 vaccine <- read.csv("WorldwideVaccineData.csv")
 ```
 
-## Exploring the datasets
+## Exploration
 **Covid-data.csv**
 ```{r covid-data, echo=TRUE, message=TRUE, warning=FALSE}
 cat("Number of rows:", nrow(covid), "\n")
@@ -71,7 +71,7 @@ summary(vaccine)
 ```
 \vspace{2cm}
 
-## Wrangling the datasets
+## Wrangling
 Deal with missing values, or wrong values such as negative values for new cases, deaths, vaccinated, etc., using KNN imputation.
 From the exploration above, only covid has missing values, so we will only impute that dataset using K Nearest Neighbors (KNN).
 By using KNN, we can fill in the missing values based on the values of the nearest neighbors in the dataset, allowing us keep the rest of the data for those entries.
@@ -126,7 +126,7 @@ vaccine %>%
 We can confirm that there are no negative values in this dataset, so no further action is needed.
 \vspace{1cm}
 
-## Integrating the datasets
+## Integration
 Now that we have cleaned the datasets, we can integrate them into one dataset. Firstly, the date attributes are in different formats for Covid-data.csv and CountryLockdowndates.csv, so we need to convert them to the same format.
 ```{r date-formatting, echo=TRUE, message=FALSE, warning=FALSE}
 covid$date <- as.Date(covid$date, format = "%Y-%m-%d")

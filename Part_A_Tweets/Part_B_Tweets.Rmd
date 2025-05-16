@@ -1,0 +1,18 @@
+---
+title: "Part A, Topic 2 - Olympic Tweets"
+author: "Lance Belen"
+date: "`r Sys.Date()`"
+output:
+  pdf_document:
+    includes:
+      in_header: header.tex
+    toc: true
+    number_sections: true
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+\newpage

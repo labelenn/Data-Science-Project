@@ -283,7 +283,7 @@ unique(data$location)
 # Data Visualisation and Analysis
 ``` {r line-plot, echo=TRUE, message=FALSE, warning=FALSE}
 library(scales)
-library(RColorBrewer)
+
 data %>%
   filter(!is.na(new_cases), !is.na(date), !is.na(location)) %>%
   ggplot(aes(x = date, y = new_cases, color = location)) +
@@ -306,3 +306,56 @@ The other country that is notable is Chine, as it showed the first spike in new 
 TODO: events surrounding significatant points on the plots (cause of the spike, or sharp reduction in cases, etc.).\newline
 The trend is similar for Spain, Italy and France, followed closely by Iran.\newline
 TODO: my understanding of the trend.
+\vspace{1cm}
+
+Now I will observe the relationship between the death rate and new case numbers with the GDP of each country.
+```{r mean-gdp, echo=TRUE, message=FALSE, warning=FALSE}
+mean_gdp <- data %>%
+  summarise(mean_gdp = mean(gdp_per_capita, na.rm = TRUE)) %>%
+  pull(mean_gdp)
+cat("Mean GDP: ", mean_gdp, "\n")
+```
+```{r eval=FALSE}
+data <- data %>%
+  mutate(GDP_Status = ifelse(gdp_per_capita >= mean_gdp, 1, 0))
+
+cat("Number of rows with GDP Status 1: ", nrow(data[data$GDP_Status == 1, ]), "\n")
+cat("Number of rows with GDP Status 0: ", nrow(data[data$GDP_Status == 0, ]), "\n")
+```
+```{r col-gdp-status, echo=FALSE, message=FALSE, warning=FALSE}
+data <- data %>%
+  mutate(GDP_Status = ifelse(gdp_per_capita >= mean_gdp, 1, 0))
+
+cat("Number of rows with GDP Status 1 (GDP greater than or equal to the mean): ", nrow(data[data$GDP_Status == 1, ]), "\n")
+cat("Number of rows with GDP Status 0 (GDP less than the mean): ", nrow(data[data$GDP_Status == 0, ]), "\n")
+```
+```{r eval=FALSE}
+data <- data %>%
+  mutate(new_case_rate = new_cases / population,
+         new_death_rate = new_deaths / population)
+
+head(data %>% filter(new_case_rate > 0 & new_death_rate > 0), 10)
+```
+```{r new-case-death-rate, echo=FALSE, message=FALSE, warning=FALSE}
+data <- data %>%
+  mutate(new_case_rate = new_cases / population,
+         new_death_rate = new_deaths / population)
+
+head(data %>% filter(new_case_rate > 0 & new_death_rate > 0), 10)
+```
+
+```{r scatter-plot-new-case-death-rate, echo=TRUE, message=FALSE, warning=FALSE}
+ggplot(data, aes(x = new_case_rate, y = new_death_rate, color = factor(GDP_Status))) +
+  geom_point(alpha = 0.7) +
+  scale_color_manual(
+    values = c("0" = "firebrick", "1" = "steelblue"),
+    labels = c("0" = "Less than average", "1" = "Equal to or greater than average"),
+    name = "GDP Category"
+  ) +
+  labs(
+    title = "Daily Case and Death Rate by GDP Status",
+    x = "Daily Case Rate",
+    y = "Daily Death Rate"
+  ) +
+  theme_minimal()
+```

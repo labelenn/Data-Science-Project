@@ -16,3 +16,318 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 \newpage
+# Data Wrangling, Visualisatsion, and Analysis
+First, load the packages needed.
+```{r load-packages, echo=TRUE, message=FALSE, warning=FALSE}
+options(repos = c(CRAN = "https://cloud.r-project.org/"))
+
+if (!requireNamespace("tidyverse", quietly = TRUE)) {
+  install.packages("tidyverse")
+}
+if (!requireNamespace("lubridate", quietly = TRUE)) {
+  install.packages("lubridate")
+}
+if (!requireNamespace("impute", quietly = TRUE)) {
+  install.packages("impute")
+}
+if (!requireNamespace("dplyr", quietly = TRUE)) {
+  install.packages("dplyr")
+}
+if (!requireNamespace("magrittr", quietly = TRUE)) {
+  install.packages("magrittr")
+}
+if (!requireNamespace("ggplot2", quietly = TRUE)) {
+  install.packages("ggplot2")
+}
+if (!requireNamespace("readxl", quietly = TRUE)) {
+  install.packages("readxl")
+}
+if (!requireNamespace("stringr", quietly = TRUE)) {
+  install.packages("stringr")
+}
+if (!requireNamespace("forcats", quietly = TRUE)) {
+  install.packages("forcats")
+}
+if (!requireNamespace("tidytext", quietly = TRUE)) {
+  install.packages("tidytext")
+}
+
+library(tidyverse)
+library(lubridate)
+library(impute)
+library(dplyr)
+library(magrittr)
+library(ggplot2)
+library(readxl)
+library(stringr)
+library(forcats)
+library(tidytext)
+```
+
+Then, read and open the dataset.
+```{r read-datasets, echo=TRUE, message=FALSE, warning=FALSE}
+tweets <- read.csv("Olympics_tweets.csv")
+```
+
+Next, explore the dataset.
+```{r eval=FALSE}
+cat("Number of rows: ", nrow(tweets), "\n")
+cat("Number of columns: ", ncol(tweets), "\n")
+knitr::kable(head(tweets))
+cat("Structure of the dataset: \n")
+str(tweets)
+cat("Summary of the dataset: \n")
+summary(tweets)
+```
+```{r tweets-data, echo=FALSE, message=TRUE, warning=FALSE}
+cat("Number of rows: ", nrow(tweets), "\n")
+cat("Number of columns: ", ncol(tweets), "\n")
+knitr::kable(head(tweets))
+cat("Structure of the dataset: \n")
+str(tweets)
+cat("Summary of the dataset: \n")
+summary(tweets)
+```
+
+Now I will check the dataset for missing or incorrect values that needs handling.
+```{r check-values, echo=TRUE, message=FALSE, warning=FALSE}
+# retweet_count
+tweets <- tweets %>%
+  mutate(retweet_count = ifelse(retweet_count < 0, NA, retweet_count)) %>%
+  mutate(retweet_count = replace_na(retweet_count, 0))
+
+# favorite_count
+tweets <- tweets %>%
+  mutate(favorite_count = ifelse(favorite_count < 0, NA, favorite_count)) %>%
+  mutate(favorite_count = replace_na(favorite_count, 0))
+
+# user_followers
+tweets <- tweets %>%
+  mutate(user_followers = ifelse(user_followers < 0, NA, user_followers)) %>%
+  mutate(user_followers = replace_na(user_followers, 0))
+
+# user_friends
+tweets <- tweets %>%
+  mutate(user_friends = ifelse(user_friends < 0, NA, user_friends)) %>%
+  mutate(user_friends = replace_na(user_friends, 0))
+
+# user_created_at
+tweets <- tweets %>%
+  mutate(user_created_at = dmy_hm(user_created_at)) %>%
+  filter(
+    user_created_at >= as.POSIXct("2006-03-21"),
+    user_created_at <= Sys.time()
+  )
+
+# date
+tweets <- tweets %>%
+  mutate(date = dmy_hm(date)) %>%
+  filter(
+    date >= as.POSIXct("2006-03-21"),
+    date <= Sys.time()
+  )
+```
+
+## Visualisation
+### Number of Twitter Accounts Created per Year
+```{r number-of-twitter-accounts, echo=TRUE, message=FALSE, warning=FALSE}
+# Create a new column for the year
+tweets$year <- year(tweets$user_created_at)
+tweets$year <- as.integer(tweets$year)
+tweets$year <- as.factor(tweets$year)
+
+# Bar plot of the number of Twitter accounts per year
+ggplot(tweets, aes(x = year)) +
+  geom_bar(fill = "steelblue") +
+  geom_text(
+    stat = "count", aes(label = ..count..), 
+    position = position_dodge(width = 0.9),
+    vjust = -0.5) + 
+  labs(x = "Year", y = "Number of Twitter Accounts Created") +
+  theme_minimal()
+```
+
+### Average Followers per Year
+```{r average-followers-per-year, echo=TRUE, message=FALSE, warning=FALSE}
+creators_after_2010 <- tweets
+creators_after_2010 <- creators_after_2010 %>% mutate(year = as.numeric(as.character(year)))
+creators_after_2010 <- creators_after_2010 %>% filter(year > 2010)
+
+creators_after_2010 %>%
+  filter(year > 2010) %>%
+  group_by(year) %>%
+  summarise(avg_followers = mean(user_followers, na.rm = TRUE)) %>%
+  ggplot(aes(x = year, y = avg_followers)) +
+  geom_bar(stat = "identity", fill = "steelblue") +
+  geom_text(
+    aes(label = round(avg_followers, 2)), 
+    vjust = -0.5) +
+  scale_x_continuous(breaks = creators_after_2010$year) +
+  labs(x = "Year", y = "Average Followers") +
+  theme_minimal()
+```
+
+### Top 10 Most Frequest Location of Users
+```{r top-10-most-frequent-location, echo=TRUE, message=FALSE, warning=FALSE}
+top_locations <- tweets %>%
+  select(user_screen_name, user_location) %>%
+  distinct() %>%
+  filter(!is.na(user_location), user_location != "") %>%
+  count(user_location, name="user_count") %>%
+  arrange(desc(user_count)) %>%
+  slice(1:10)
+
+top_locations <- top_locations %>%
+  mutate(user_location = fct_reorder(user_location, user_count, .desc = TRUE)) %>%
+  mutate(user_location = fct_rev(user_location))
+
+ggplot(top_locations, aes(x = user_location, y = user_count)) +
+  geom_col(fill = "steelblue") +
+  geom_text(aes(label = user_count), hjust = -0.1, vjust = 0.5) +
+  coord_flip() +
+  labs(x = "User Location", y = "Number of Users") +
+  theme_minimal() +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.15)))
+```
+
+### Number of Tweets Associated with the Top 10 locations
+```{r number-of-tweets-associated-with-top-10-locations, echo=TRUE, message=FALSE, warning=FALSE}
+tweets_in_top_10_locations <- tweets %>%
+  filter(user_location %in% top_locations$user_location) %>%
+  group_by(user_location) %>%
+  summarise(tweet_count = n()) %>%
+  arrange(desc(tweet_count))
+
+tweets_in_top_10_locations <- tweets_in_top_10_locations %>%
+  mutate(user_location = fct_reorder(user_location, tweet_count, .desc = TRUE)) %>%
+  mutate(user_location = fct_rev(user_location))
+
+ggplot(tweets_in_top_10_locations, aes(x = user_location, y = tweet_count)) +
+  geom_col(fill = "steelblue") +
+  geom_text(aes(label = tweet_count), hjust = -0.1, vjust = 0.5) +
+  coord_flip() +
+  labs(x = "User Location", y = "Number of Tweets") +
+  theme_minimal() +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.15)))
+```
+
+From the last two visualisations, the odd values are "she/her", and some locations are the geographically the same from a broader perspective, but some are more specific to cities.
+For example, "New York- NY", "Los Angeles- CA", and "United States". The first two locations are cities in the United States, but there is also
+"United States" as a location.
+
+### Bar Chart of the Length of Tweets
+```{r bar-chart-of-length-of-tweets, echo=TRUE, message=FALSE, warning=FALSE}
+tweets <- tweets %>%
+  mutate(tweet_length = nchar(text)) %>%
+  mutate(length_group = case_when(
+    tweet_length >= 1 & tweet_length <= 40 ~ "1-40",
+    tweet_length >= 41 & tweet_length <= 80 ~ "41-80",
+    tweet_length >= 81 & tweet_length <= 120 ~ "81-120",
+    tweet_length >= 121 & tweet_length <= 160 ~ "121-160",
+    tweet_length >= 161 & tweet_length <= 200 ~ "161-200",
+    tweet_length >= 201 & tweet_length <= 240 ~ "201-240",
+    tweet_length >= 241 ~ "241+",
+    TRUE ~ "Unknown"
+  ))
+
+length_group_counts <- tweets %>%
+  count(length_group)
+
+custom_order <- c("1-40", "41-80", "81-120", "121-160", "161-200", "201-240", "241+")
+length_group_counts <- length_group_counts %>%
+  mutate(length_group = factor(length_group, levels = custom_order))
+
+ggplot(length_group_counts, aes(x = length_group, y = n)) +
+  geom_bar(stat = "identity", fill = "steelblue") +
+  geom_text(aes(label = n), vjust = -0.5) +
+  labs(x = "Length of Tweets", y = "Number of Tweets") +
+  theme_minimal()
+```
+
+### Number of Tweets with Mentions and Its Count
+```{r number-of-tweets-with-mentions, echo=TRUE, message=FALSE, warning=FALSE}
+
+tweets_with_mentions <- tweets %>%
+  filter(str_detect(text, "@[A-Za-z0-9_]+")) %>%
+  mutate(mentions_count = str_count(text, "@[A-Za-z0-9_]+"))
+
+tweets_with_mentions <- tweets_with_mentions %>%
+  group_by(mentions_count) %>%
+  summarise(tweet_count = n()) %>%
+  arrange(desc(tweet_count))
+
+tweets_with_mentions <- tweets_with_mentions %>%
+  mutate(mentions_count = as.factor(mentions_count)) %>%
+  mutate(mentions_count = fct_reorder(mentions_count, tweet_count, .desc = TRUE)) %>%
+  mutate(mentions_count = fct_rev(mentions_count))
+
+ggplot(tweets_with_mentions, aes(x = mentions_count, y = tweet_count)) +
+  geom_col(fill = "steelblue") +
+  coord_flip() +
+  geom_text(aes(label = tweet_count), hjust = -0.1, vjust = 0.5) +
+  labs(x = "Number of Mentions", y = "Number of Tweets") +
+  theme_minimal() +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.15)))
+
+number_of_tweets_with_mentions <- tweets %>%
+  filter(str_detect(text, "@[A-Za-z0-9_]+")) %>%
+  nrow()
+
+number_of_tweets_with_3_or_more_mentions <- tweets %>%
+  filter(str_detect(text, "@[A-Za-z0-9_]+")) %>%
+  mutate(mentions_count = str_count(text, "@[A-Za-z0-9_]+")) %>%
+  filter(mentions_count >= 3) %>%
+  nrow()
+
+cat("Number of tweets with mentions: ", number_of_tweets_with_mentions, "\n")
+cat("Number of tweets with 3 or more mentions: ", number_of_tweets_with_3_or_more_mentions, "\n")
+```
+
+### Top 20 Most Frequent Term in Tweets
+```{r top-20-most-frequent-terms, echo=TRUE, message=FALSE, warning=FALSE}
+library(tidytext)
+
+tweets_frequent_terms <- tweets %>%
+  mutate(text = tolower(text)) %>%
+  unnest_tokens(word, text) %>%
+  count(word, sort = TRUE)
+
+top_20_terms <- tweets_frequent_terms %>%
+  slice(1:20) %>%
+  mutate(word = fct_reorder(word, n)) %>%
+  mutate(word = fct_rev(word))
+
+max_count <- max(top_20_terms$n)
+
+ggplot(top_20_terms, aes(x = reorder(word, n), y = n)) +
+  geom_col(fill = "steelblue") +
+  geom_text(aes(label = n), hjust = -0.1, vjust = 0.5) +
+  coord_flip() +
+  labs(x = "Word", y = "Number of Occurrences") +
+  theme_minimal() +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.15)))
+```
+
+### Top 20 Most Frequent Non-Stopword Term in Tweets
+```{r top-20-most-frequent-terms-with-no-stopwords, echo=TRUE, message=FALSE, warning=FALSE}
+tweets_frequent_terms_no_stopwords <- tweets %>%
+  mutate(text = tolower(text)) %>%
+  unnest_tokens(word, text) %>%
+  anti_join(stop_words) %>%
+  count(word, sort = TRUE)
+
+top_20_terms_no_stopwords <- tweets_frequent_terms_no_stopwords %>%
+  slice(1:20) %>%
+  mutate(word = fct_reorder(word, n)) %>%
+  mutate(word = fct_rev(word))
+
+max_count_no_stopwords <- max(top_20_terms_no_stopwords$n)
+
+ggplot(top_20_terms_no_stopwords, aes(x = reorder(word, n), y = n)) +
+  geom_col(fill = "steelblue") +
+  geom_text(aes(label = n), hjust = -0.1, vjust = 0.5) +
+  coord_flip() +
+  labs(x = "Word", y = "Number of Occurrences") +
+  theme_minimal() +
+  scale_y_continuous(expand = expansion(mult = c(0, 0.15)))
+```

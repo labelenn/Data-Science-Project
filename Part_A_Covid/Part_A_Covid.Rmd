@@ -20,9 +20,49 @@ knitr::opts_chunk$set(echo = TRUE)
 
 First, load the packages needed.
 ```{r load-packages, echo=TRUE, message=FALSE, warning=FALSE}
-library(readxl)
-library(ggplot2)
+options(repos = c(CRAN = "https://cloud.r-project.org/"))
+
+if (!requireNamespace("tidyverse", quietly = TRUE)) {
+  install.packages("tidyverse")
+}
+if (!requireNamespace("lubridate", quietly = TRUE)) {
+  install.packages("lubridate")
+}
+if (!requireNamespace("impute", quietly = TRUE)) {
+  install.packages("impute")
+}
+if (!requireNamespace("dplyr", quietly = TRUE)) {
+  install.packages("dplyr")
+}
+if (!requireNamespace("magrittr", quietly = TRUE)) {
+  install.packages("magrittr")
+}
+if (!requireNamespace("ggplot2", quietly = TRUE)) {
+  install.packages("ggplot2")
+}
+if (!requireNamespace("readxl", quietly = TRUE)) {
+  install.packages("readxl")
+}
+if (!requireNamespace("stringr", quietly = TRUE)) {
+  install.packages("stringr")
+}
+if (!requireNamespace("forcats", quietly = TRUE)) {
+  install.packages("forcats")
+}
+if (!requireNamespace("tidytext", quietly = TRUE)) {
+  install.packages("tidytext")
+}
+
 library(tidyverse)
+library(lubridate)
+library(impute)
+library(dplyr)
+library(magrittr)
+library(ggplot2)
+library(readxl)
+library(stringr)
+library(forcats)
+library(tidytext)
 ```
 
 Then, read and open the three datasets, Covid-data.csv, CountryLockdowndates.csv and WorldwideVaccineData.csv
@@ -393,3 +433,5 @@ To provide an example:
 
 Overseas travel played a major role in the global spread of COVID-19 as rapid transmission across borders occurred. In 2020, the death rate from the virus
 for those that are aged 85 and over was 1,645 per 100,000 population -- seven times greater than the rate for those aged 65 to 74. (Tejada-Vera, B. & Kramarow, A., 2022).
+
+# Predictive Data Analaysis

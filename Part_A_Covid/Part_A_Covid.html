@@ -11,7 +11,7 @@
 
 <meta name="author" content="Lance Belen" />
 
-<meta name="date" content="2025-05-20" />
+<meta name="date" content="2025-05-23" />
 
 <title>Part A, Topic 1 - COVID-19</title>
 
@@ -352,7 +352,7 @@ display: none;
 
 <h1 class="title toc-ignore">Part A, Topic 1 - COVID-19</h1>
 <h4 class="author">Lance Belen</h4>
-<h4 class="date">2025-05-20</h4>
+<h4 class="date">2025-05-23</h4>
 
 </div>
 
@@ -361,9 +361,49 @@ display: none;
 <div id="data-wrangling-and-integration" class="section level1">
 <h1>Data Wrangling and Integration</h1>
 <p>First, load the packages needed.</p>
-<pre class="r"><code>library(readxl)
+<pre class="r"><code>options(repos = c(CRAN = &quot;https://cloud.r-project.org/&quot;))
+
+if (!requireNamespace(&quot;tidyverse&quot;, quietly = TRUE)) {
+  install.packages(&quot;tidyverse&quot;)
+}
+if (!requireNamespace(&quot;lubridate&quot;, quietly = TRUE)) {
+  install.packages(&quot;lubridate&quot;)
+}
+if (!requireNamespace(&quot;impute&quot;, quietly = TRUE)) {
+  install.packages(&quot;impute&quot;)
+}
+if (!requireNamespace(&quot;dplyr&quot;, quietly = TRUE)) {
+  install.packages(&quot;dplyr&quot;)
+}
+if (!requireNamespace(&quot;magrittr&quot;, quietly = TRUE)) {
+  install.packages(&quot;magrittr&quot;)
+}
+if (!requireNamespace(&quot;ggplot2&quot;, quietly = TRUE)) {
+  install.packages(&quot;ggplot2&quot;)
+}
+if (!requireNamespace(&quot;readxl&quot;, quietly = TRUE)) {
+  install.packages(&quot;readxl&quot;)
+}
+if (!requireNamespace(&quot;stringr&quot;, quietly = TRUE)) {
+  install.packages(&quot;stringr&quot;)
+}
+if (!requireNamespace(&quot;forcats&quot;, quietly = TRUE)) {
+  install.packages(&quot;forcats&quot;)
+}
+if (!requireNamespace(&quot;tidytext&quot;, quietly = TRUE)) {
+  install.packages(&quot;tidytext&quot;)
+}
+
+library(tidyverse)
+library(lubridate)
+library(impute)
+library(dplyr)
+library(magrittr)
 library(ggplot2)
-library(tidyverse)</code></pre>
+library(readxl)
+library(stringr)
+library(forcats)
+library(tidytext)</code></pre>
 <p>Then, read and open the three datasets, Covid-data.csv,
 CountryLockdowndates.csv and WorldwideVaccineData.csv</p>
 <pre class="r"><code>covid &lt;- read.csv(&quot;Covid-data.csv&quot;)
@@ -1099,6 +1139,9 @@ as rapid transmission across borders occurred. In 2020, the death rate
 from the virus for those that are aged 85 and over was 1,645 per 100,000
 population – seven times greater than the rate for those aged 65 to 74.
 (Tejada-Vera, B. &amp; Kramarow, A., 2022).</p>
+</div>
+<div id="predictive-data-analaysis" class="section level1">
+<h1>Predictive Data Analaysis</h1>
 </div>
 
 

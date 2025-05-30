@@ -435,3 +435,77 @@ Overseas travel played a major role in the global spread of COVID-19 as rapid tr
 for those that are aged 85 and over was 1,645 per 100,000 population -- seven times greater than the rate for those aged 65 to 74. (Tejada-Vera, B. & Kramarow, A., 2022).
 
 # Predictive Data Analaysis
+For this part, I will be fitting a model to make predictions on the newly infected case and death case numbers for the next five to seven days.
+I will be using Polynomial Regression to fit the model for the GDP group of countries whose GDP per capita is greater than or equal to the average GDP per capita of all countries in the dataset.
+This is because the countries in the group have daily new cases and deaths that are more spread out, which is more suitable for training a model since the data is more varied.
+
+Firstly, let's create the model so we can plot a polynomial regression line. I will start with using the number of days since the earliest date in the dataset as the predictor variable for the number of new cases.
+```{r polynomial-regression-date, echo=TRUE, message=FALSE, warning=FALSE}
+data_higher_gdp <- data %>%
+  filter(GDP_Status == 1, !is.na(new_cases), !is.na(date)) %>%
+  mutate(date_num = as.numeric(as.Date(date) - min(as.Date(date))))
+
+# Split train/test sets
+set.seed(4)
+train_indices <- sample(1:nrow(data_higher_gdp), size = 0.7 * nrow(data_higher_gdp))
+train <- data_higher_gdp[train_indices, ]
+test <- data_higher_gdp[-train_indices, ]
+
+# Create a sequence of dates for smooth prediction lines
+date_seq <- seq(min(train$date_num), max(train$date_num), length.out = 100)
+
+# Initialize a dataframe to store predictions for all models
+all_preds <- data.frame()
+
+for (deg in 1:10) {
+  # Fit the model with current degree for date
+  model <- lm(new_cases ~ poly(date_num, deg), data = train)
+  
+  # Predict on the date sequence with fixed GDP per capita
+  pred_df <- data.frame(date_num = date_seq)
+  pred_df$new_cases <- predict(model, newdata = pred_df)
+  pred_df$degree <- factor(deg)
+  
+  all_preds <- bind_rows(all_preds, pred_df)
+}
+
+# Plot all polynomial lines in a facet grid
+ggplot() +
+  geom_point(data = train, aes(x = date_num, y = new_cases), alpha = 0.3) +
+  geom_line(data = all_preds, aes(x = date_num, y = new_cases, color = degree), size = 1) +
+  facet_wrap(~ degree, scales = "free_x") +
+  labs(
+    title = "Polynomial Regression Lines for Different Degrees (New Cases)",
+    x = "Date (in days since start)",
+    y = "New Cases"
+  ) +
+  theme_minimal()
+```
+\vspace{1cm}
+
+Next, a model to predict the number of new cases based on the total number of cases.
+```{r polynomial-regression-total-cases, echo=TRUE, message=FALSE, warning=FALSE}
+# Model to predict new cases based on total cases
+all_preds <- data.frame()  # initialize outside the loop
+
+for (deg in 1:10) {
+  model <- lm(new_cases ~ poly(total_cases, deg), data = train)
+  
+  pred_df <- data.frame(total_cases = seq(min(train$total_cases), max(train$total_cases), length.out = 100))
+  pred_df$new_cases <- predict(model, newdata = pred_df)
+  pred_df$degree <- factor(deg)
+  
+  all_preds <- bind_rows(all_preds, pred_df)
+}
+
+ggplot() +
+  geom_point(data = train, aes(x = total_cases, y = new_cases), alpha = 0.3) +
+  geom_line(data = all_preds, aes(x = total_cases, y = new_cases, color = degree), size = 1) +
+  facet_wrap(~ degree, scales = "free_x") +
+  labs(
+    title = "Polynomial Regression Lines for Different Degrees (Total Cases)",
+    x = "Total Cases",
+    y = "New Cases"
+  ) +
+  theme_minimal()
+```

@@ -53,6 +53,10 @@ if (!requireNamespace("tidytext", quietly = TRUE)) {
   install.packages("tidytext")
 }
 
+if (!requireNamespace("caret", quietly = TRUE)) {
+  install.packages("caret")
+}
+
 library(tidyverse)
 library(lubridate)
 library(impute)
@@ -63,6 +67,7 @@ library(readxl)
 library(stringr)
 library(forcats)
 library(tidytext)
+library(caret)
 ```
 
 Then, read and open the three datasets, Covid-data.csv, CountryLockdowndates.csv and WorldwideVaccineData.csv
@@ -297,7 +302,7 @@ summary(data)
 ```{r eval=FALSE}
 unique(data$location)
 ```
-``` {r message=TRUE}
+``` {r echo=FALSE, message=FALSE, warning=FALSE}
 unique(data$location)
 ```
 I can see that some of the values in the location column are not consistent, so I will need to clean them up accordingly.
@@ -314,10 +319,9 @@ After cleaning up:
 ```{r eval=FALSE}
 unique(data$location)
 ```
-``` {r message=TRUE}
+``` {r echo=FALSE, message=FALSE, warning=FALSE}
 unique(data$location)
 ```
-
 \vspace {2 cm}
 
 # Data Visualisation and Analysis
@@ -439,7 +443,9 @@ For this part, I will be fitting a model to make predictions on the newly infect
 I will be using Polynomial Regression to fit the model for the GDP group of countries whose GDP per capita is greater than or equal to the average GDP per capita of all countries in the dataset.
 This is because the countries in the group have daily new cases and deaths that are more spread out, which is more suitable for training a model since the data is more varied.
 
-Firstly, let's create the model so we can plot a polynomial regression line. I will start with using the number of days since the earliest date in the dataset as the predictor variable for the number of new cases.
+Firstly, let's create the model so we can plot a polynomial regression line.
+I will start with using the number of days since the earliest date in the dataset as the predictor variable for the number of new cases.
+For the training and testing sets, I will split the data into 70% for training and 30% for testing.
 ```{r polynomial-regression-date, echo=TRUE, message=FALSE, warning=FALSE}
 data_higher_gdp <- data %>%
   filter(GDP_Status == 1, !is.na(new_cases), !is.na(date)) %>%
@@ -481,9 +487,11 @@ ggplot() +
   ) +
   theme_minimal()
 ```
+From these plots, I can see that, the polynomial regression lines for all of the degrees don't seem to have much differences and all seem to be a good fit.
+However, I will choose the degree 5 as it seems to be a good balance between complexity and fit, without overfitting the data.
 \vspace{1cm}
 
-Next, a model to predict the number of new cases based on the total number of cases.
+Next, I will use the total number of cases as the predictor variable.
 ```{r polynomial-regression-total-cases, echo=TRUE, message=FALSE, warning=FALSE}
 # Model to predict new cases based on total cases
 all_preds <- data.frame()  # initialize outside the loop
@@ -509,3 +517,260 @@ ggplot() +
   ) +
   theme_minimal()
 ```
+From these plots, I can see that degree 7 seems to be the best fit for the polynomial regression line, as it captures the trend of the new cases based on the total cases without overfitting.
+\vspace{1cm}
+
+Next, I want to check what other variables can be used to predict the new cases. The three variables below are the ones that might have an effect on the number of new cases.
+I will check the number of unique values in each of these variables to see if they are suitable for polynomial regression.
+``` {r , echo=FALSE, message=TRUE, warning=FALSE}
+cat("number of unique locations in the dataset: ", length(unique(data_higher_gdp$location)), "\n")
+cat("number of unique population values in the dataset: ", length(unique(data_higher_gdp$population)), "\n")
+cat("number of unique GDP per capita values in the dataset: ", length(unique(data_higher_gdp$gdp_per_capita)), "\n")
+```
+
+There are six unique locations, unique population values and unique GDP per capita values in the dataset.
+Six different locations might be a good number to use as a predictor variable.
+Six unique population values most likely isn't enough to use as a predictor variable, given that the population value is numerical.
+Similarly, six unique GDP per capita values is also not enough to use as a predictor variable.
+
+I will now use the location as a predictor variable for the new cases.
+```{r polynomial-regression-location, echo=TRUE, message=FALSE, warning=FALSE}
+# Convert location to a factor
+data_higher_gdp$location <- as.factor(data_higher_gdp$location)
+train$location <- as.factor(train$location)
+test$location <- as.factor(test$location)
+
+# Create a sequence of locations for smooth prediction lines
+location_seq <- levels(data_higher_gdp$location)
+
+# Initialize a dataframe to store predictions for all models
+all_preds <- data.frame()
+
+for (deg in 1:5) {
+  # Fit the model with current degree for location
+  model <- lm(new_cases ~ poly(as.numeric(location), deg), data = train)
+  
+  # Predict on the location sequence
+  pred_df <- data.frame(location = seq_along(location_seq))
+  pred_df$new_cases <- predict(model, newdata = pred_df)
+  pred_df$degree <- factor(deg)
+  
+  all_preds <- bind_rows(all_preds, pred_df)
+}
+
+# Plot all polynomial lines in a facet grid
+ggplot() +
+  geom_point(data = train, aes(x = as.numeric(location), y = new_cases), alpha = 0.3) +
+  geom_line(data = all_preds, aes(x = as.numeric(location), y = new_cases, color = degree), size = 1) +
+  facet_wrap(~ degree, scales = "free_x") +
+  labs(
+    title = "Polynomial Regression Lines for Different Degrees (New Cases by Location)",
+    x = "Location",
+    y = "New Cases"
+  ) +
+  theme_minimal()
+
+# Print what the encoded locations are
+location_encoded <- data.frame(
+  Location = levels(data_higher_gdp$location),
+  Encoding = seq_along(levels(data_higher_gdp$location))
+)
+
+print(location_encoded)
+```
+From these plots, I will chose degree 1 (linear) as it captures the trend of the new cases based on the location without overfitting.
+\vspace{1cm}
+
+Finally, I will now create a model to predict new cases based on the three predictor variables that I have used and the degrees that are best suited for each of them.
+I understand that my choices for the degrees are subjective to models with only the corresponding predcitor variable above. Hence, I will loop through
+the degrees 5, 6, and 7 for the date_num and total_cases predictor variables to see how the line fits the data.
+```{r polynomial-regression-deciding-for-final, echo=TRUE, message=TRUE, warning=FALSE}
+# Define the degree combinations for poly(date_num, deg1) and poly(total_cases, deg2)
+deg_combinations <- expand.grid(deg_date = 5:7, deg_cases = 5:7)
+
+# Create prediction dataframe with 100 points
+date_seq <- seq(min(train$date_num), max(train$date_num), length.out = 100)
+mean_total_cases <- mean(train$total_cases, na.rm = TRUE)
+fixed_location <- factor(levels(train$location)[1], levels = levels(train$location))
+
+# Container to store all prediction results
+all_preds <- data.frame()
+
+# Loop over all combinations of degrees
+for (i in 1:nrow(deg_combinations)) {
+  deg_date <- deg_combinations$deg_date[i]
+  deg_cases <- deg_combinations$deg_cases[i]
+  
+  # Fit model
+  model <- lm(new_cases ~ poly(date_num, deg_date) + poly(total_cases, deg_cases) + location, data = train)
+  
+  # Create prediction dataframe
+  pred_df <- data.frame(
+    date_num = date_seq,
+    total_cases = mean_total_cases,
+    location = fixed_location
+  )
+  
+  # Predict new cases
+  pred_df$new_cases <- predict(model, newdata = pred_df)
+  pred_df$deg_date_num <- factor(deg_date)
+  pred_df$deg_total_cases <- factor(deg_cases)
+  
+  all_preds <- bind_rows(all_preds, pred_df)
+}
+
+# Plot: Facet grid of regression lines
+ggplot() +
+  geom_point(data = train, aes(x = date_num, y = new_cases), alpha = 0.2) +
+  geom_line(data = all_preds, aes(x = date_num, y = new_cases, color = deg_total_cases), size = 1) +
+  facet_grid(deg_total_cases ~ deg_date_num, labeller = label_both) +
+  labs(
+    title = "Polynomial Regression Lines for Combinations of Degrees",
+    x = "Date (in days since start)",
+    y = "New Cases",
+    color = "Degree"
+  ) +
+  theme_minimal()
+```
+
+From these plots, I can see that the polynomial regression lines for the combinations of degrees 5, 6, and 7 for date_num and total_cases
+do not seem to have much differences and all seem to be a good fit.
+However, I will choose the combination of degree 5 for date_num and degree 6 for total_cases as it seems to be a good balance between complexity and fit, without overfitting the data.
+\vspace{1cm}
+
+Here's the plot for the final model for a better visualisation of the polynomial regression line.
+```{r polynomial-regression-final-plot, echo=TRUE, message=FALSE, warning=FALSE}
+# Final model with chosen degrees
+final_model <- lm(new_cases ~ poly(date_num, 5) + poly(total_cases, 6) + location, data = train)
+
+# Create prediction dataframe
+pred_df <- data.frame(
+  date_num = date_seq,
+  total_cases = mean_total_cases,
+  location = fixed_location
+)
+
+# Predict new cases
+pred_df$new_cases <- predict(final_model, newdata = pred_df)
+
+# Plot the final model
+ggplot() +
+  geom_point(data = train, aes(x = date_num, y = new_cases), alpha = 0.2) +
+  geom_line(data = pred_df, aes(x = date_num, y = new_cases), color = "blue", size = 1) +
+  labs(
+    title = "Final Polynomial Regression Line for New Cases",
+    x = "Date (in days since start)",
+    y = "New Cases"
+  ) +
+  theme_minimal()
+```
+
+### Predictions on the newly infected case numbers
+Now I will use the model to make a prediction on the new cases for the last five to seven days in the dataset.
+This is so I can compare the predicted values with the actual values in the dataset.
+I will use the test dataset first, then evaluate using K-fold Cross Validation.
+```{r predict-new-cases, echo=TRUE, message=FALSE, warning=FALSE}
+# Create a prediction dataframe from the test set
+pred_test_df <- data.frame(
+  date_num = test$date_num,
+  total_cases = test$total_cases,
+  location = test$location
+)
+
+# Predict new cases using the final model
+pred_test_df$predicted_new_cases <- predict(final_model, newdata = pred_test_df)
+
+# Combine with actual test data for comparison
+test_combined <- test %>%
+  select(date_num, location, new_cases) %>%
+  mutate(predicted_new_cases = pred_test_df$predicted_new_cases)
+
+# Plot: Actual vs Predicted New Cases on Test Set
+ggplot(test_combined, aes(x = date_num)) +
+  geom_line(aes(y = new_cases, color = "Actual"), size = 1) +
+  geom_line(aes(y = predicted_new_cases, color = "Predicted"), size = 1, linetype = "dashed") +
+  labs(
+    title = "Actual vs Predicted New Cases (Test Set)",
+    x = "Date (in days since start)",
+    y = "New Cases",
+    color = "Legend"
+  ) +
+  scale_color_manual(values = c("Actual" = "black", "Predicted" = "blue")) +
+  theme_minimal()
+```
+
+```{r predict-new-cases-last-five-to-seven-days, echo=TRUE, message=FALSE, warning=FALSE}
+# Get the last 7 unique days in date_num
+last_days <- sort(unique(test_combined$date_num), decreasing = TRUE)[1:7]
+
+# Filter test_combined for only those days
+last_week_predictions <- test_combined %>%
+  filter(date_num %in% last_days) %>%
+  arrange(date_num, location)
+
+# Rename columns for clarity
+last_week_predictions <- last_week_predictions %>%
+  select(date_num, location, new_cases, predicted_new_cases) %>%
+  rename(
+    Days_Since_Start_Date = date_num,
+    Location = location,
+    Actual = new_cases,
+    Predicted = predicted_new_cases
+  )
+
+# Print the results
+print(last_week_predictions)
+```
+\vspace{1cm}
+
+To show how the model performs, I will calculate the Root Mean Squared Error (RMSE) and R-squared values for the predictions.
+```{r, eval=FALSE}
+# Calculate RMSE and R-squared
+rmse <- sqrt(mean((test_combined$predicted_new_cases - test_combined$new_cases)^2))
+r_squared <- 1 - (sum((test_combined$predicted_new_cases - test_combined$new_cases)^2) / sum((test_combined$new_cases - mean(test_combined$new_cases))^2))
+cat("RMSE: ", rmse, "\n")
+cat("R-squared: ", r_squared, "\n")
+```
+```{r model-evaluation, echo=FALSE, message=FALSE, warning=FALSE}
+# Calculate RMSE and R-squared
+rmse <- sqrt(mean((test_combined$predicted_new_cases - test_combined$new_cases)^2))
+r_squared <- 1 - (sum((test_combined$predicted_new_cases - test_combined$new_cases)^2) / sum((test_combined$new_cases - mean(test_combined$new_cases))^2))
+cat("RMSE: ", rmse, "\n")
+cat("R-squared: ", r_squared, "\n")
+```
+\vspace{1cm}
+
+To furthe validate the model, I will apply K-fold Cross-Validation to evaluate the predictions.
+```{r k-fold-cross-validation, echo=TRUE, message=FALSE, warning=FALSE}
+set.seed(4)
+
+# Create a control object for K-fold cross-validation
+train_control <- trainControl(method = "cv", number = 5)
+
+# Fit the model using K-fold cross-validation
+cv_model <- train(
+  new_cases ~ poly(date_num, 5) + poly(total_cases, 6) + location,
+  data = data_higher_gdp,
+  method = "lm",
+  trControl = train_control
+)
+
+# Print the results of the cross-validation
+print(cv_model)
+```
+
+Before applying K-fold Cross Validation, the model achieved an R-squared of 0.87 and an RMSE of 1599.55, indicating a strong fit
+to the testing data with realtively lower prediction error. However, after evaluating the model using K-fold Cross Validation,
+the R-squared decreased slightly to 0.83 and RMSE increased to 1782.62, indicating that the model may be overfitting as it performs well on testing data
+but struggles to generalise. The presence of outliers in the dataset may have contributed to this discrepancy, as they can disproportionately affect the model's performance,
+leading to higher RMSE and lower R-squared values during cross-validation. Applying K-fold Cross Validation helps to mitigate this issue by providing a more robust evaluation of the model's
+performance across different subsets of the data. However, in this instance, the model's performance on unseen data is not as strong as it was on the testing data.
+
+To further enhance the model's performance and generalisation capabilities, steps such as outlier handling and feature selection may be necessary.
+Although the sudden spikes in COVID-19 new cases might appear as outliers from a statistical perspective, they could present legitimate events such as outbreaks
+or changes in reporting practices. Therefore, while outright removal of these points may not be appropriate, techniques like robust
+regression or transformations could be used to reducte the impact without disregarding meaningful data. Moreover, applying feature selection helps lessen
+the noise from irrelevant or redundant features, allowing the model to focus on the most significant predictors. In this context, simply adding more data
+may not yield better performance especially if the underlying patterns remain volatile. Thus, refining the quality of the input data and ensuring
+the model does not overly rely on extreme values are more practical approaches to improve the model's predictive capabilities.
+\vspace{1cm}

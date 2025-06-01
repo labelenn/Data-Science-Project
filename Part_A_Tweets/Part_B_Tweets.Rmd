@@ -9,6 +9,8 @@ output:
     toc: true
     number_sections: true
   html_document: default
+bibliography: references.bib
+csl: apa-7th-edition.csl
 ---
 
 ```{r setup, include=FALSE}
@@ -51,6 +53,12 @@ if (!requireNamespace("forcats", quietly = TRUE)) {
 if (!requireNamespace("tidytext", quietly = TRUE)) {
   install.packages("tidytext")
 }
+if(!requireNamespace("xgboost", quietly = TRUE)) {
+  install.packages("xgboost")
+}
+if(!requireNamespace("MLmetrics", quietly = TRUE)) {
+  install.packages("MLmetrics")
+}
 
 library(tidyverse)
 library(lubridate)
@@ -62,8 +70,11 @@ library(readxl)
 library(stringr)
 library(forcats)
 library(tidytext)
+library(xgboost)
+library(MLmetrics)
 ```
 
+## Data Wrangling
 Then, read and open the dataset.
 ```{r read-datasets, echo=TRUE, message=FALSE, warning=FALSE}
 tweets <- read.csv("Olympics_tweets.csv")
@@ -128,7 +139,7 @@ tweets <- tweets %>%
   )
 ```
 
-## Visualisation
+## Visualisations and Analysis
 ### Number of Twitter Accounts Created per Year
 ```{r number-of-twitter-accounts, echo=TRUE, message=FALSE, warning=FALSE}
 # Create a new column for the year
@@ -175,7 +186,7 @@ top_locations <- tweets %>%
   filter(!is.na(user_location), user_location != "") %>%
   count(user_location, name="user_count") %>%
   arrange(desc(user_count)) %>%
-  slice(1:10)
+  dplyr::slice(1:10)
 
 top_locations <- top_locations %>%
   mutate(user_location = fct_reorder(user_location, user_count, .desc = TRUE)) %>%
@@ -293,7 +304,7 @@ tweets_frequent_terms <- tweets %>%
   count(word, sort = TRUE)
 
 top_20_terms <- tweets_frequent_terms %>%
-  slice(1:20) %>%
+  dplyr::slice(1:20) %>%
   mutate(word = fct_reorder(word, n)) %>%
   mutate(word = fct_rev(word))
 
@@ -317,7 +328,7 @@ tweets_frequent_terms_no_stopwords <- tweets %>%
   count(word, sort = TRUE)
 
 top_20_terms_no_stopwords <- tweets_frequent_terms_no_stopwords %>%
-  slice(1:20) %>%
+  dplyr::slice(1:20) %>%
   mutate(word = fct_reorder(word, n)) %>%
   mutate(word = fct_rev(word))
 
@@ -331,3 +342,248 @@ ggplot(top_20_terms_no_stopwords, aes(x = reorder(word, n), y = n)) +
   theme_minimal() +
   scale_y_continuous(expand = expansion(mult = c(0, 0.15)))
 ```
+\vspace{2cm}
+
+# Predictive Data Analysis
+## Model Training
+In this section, I will build machine learning models to predict whether a tweet is relevant or not.
+I will use the glm function to build a logistic regression models using all of the features from the dataset.
+The glm function is used to fit generalized linear models, which can be used for binary classification tasks like this one.
+Next, I will try to use interaction terms to see if that can improve the same model's performance.
+FInally, I will use the xgboost package to build a gradient boosting model to also evaluate how it performs compared to the logistic regression models.
+
+First, I will make sure that the dependent variable is numeric and has only two values, 0 and 1.
+Luckily, the dataset has already been split into training and testing sets, so I will use the training set to build the models and the testing set to evaluate them.
+```{r prepare-data-for-modeling, echo=TRUE, message=FALSE, warning=FALSE}
+# Load the training and testing datasets
+train <- read.csv("predictive_twitter_train.csv")
+
+# Check missing values in relevanceJudge column
+cat("Missing values in relevanceJudge column: ", 
+    sum(is.na(train$relevanceJudge)), "\n")
+
+# Check if relevanceJudge is numeric
+cat("Is relevanceJudge numeric: ", 
+    is.numeric(train$relevanceJudge), "\n")
+
+# Number of columns in the training set
+cat("Number of columns in the training set: ", 
+    ncol(train), "\n")
+
+# Number of columns that are numeric in the training set
+cat("Number of numeric columns in the training set: ", 
+    sum(sapply(train, is.numeric)), "\n")
+
+# Exclude tweetID from the training set
+train <- train %>%
+  select(-tweetID)
+
+# Rename mistakenly named column nFavorties to nFavorites
+train <- train %>%
+  rename(nFavorites = nFavorties)
+```
+
+From the output in the code chunk above, we can see that the `relevanceJudge` column has no missing values, is numeric, and there are 26 columns in the training set, all of which are numeric.
+Next, I will build a logistic regression model using the `glm` function. I will use the `relevanceJudge` column as the dependent variable and all other columns as independent variables.
+
+```{r build-logistic-regression-model, echo=TRUE, message=FALSE, warning=FALSE}
+# Build the logistic regression model
+model1 <- glm(relevanceJudge ~ ., data = train, family = binomial)
+
+# Summary of the model
+summary(model1)
+
+# Check the coefficients of the model
+cat("Coefficients of the model with all of the features: \n")
+print(coef(model1))
+```
+
+Next, I will build another model with interaction terms between some of the author's account details.
+```{r build-logistic-regression-model-with-interaction-terms, echo=TRUE, message=FALSE, warning=FALSE}
+# Build the logistic regression model with interaction terms
+model2 <- glm(relevanceJudge ~ isVerified *
+              nFollowers *
+              nFriends *
+              nFavorites *
+              nListed +
+              .,
+              data = train, family = binomial)
+
+# Summary of the model
+summary(model2)
+
+# Check the coefficients of the model
+cat("Coefficients of the model with interaction terms:\n")
+print(coef(model2))
+```
+
+Finally, I will build an XGboost model using the `xgboost` package.
+```{r build-logistic-xgboost, echo=TRUE, message=FALSE, warning=FALSE}
+# Prepare the data for XGBoost
+train_clean <- na.omit(train)  # Remove rows with NA values
+train_matrix <- model.matrix(relevanceJudge ~ ., data = train_clean)[, -1]
+train_label <- train_clean$relevanceJudge
+
+# Build the XGBoost model
+model3 <- xgboost(data = train_matrix, label = train_label, 
+                  nrounds = 100, objective = "binary:logistic",
+                  eval_metric = "logloss", verbose = 0)
+
+# Check the importance of the features
+cat("Feature importance of the XGBoost model: \n")
+print(xgb.importance(model = model3))
+```
+
+## Model Evalutaion
+Now I will evaluate the performance of the models by measuring their F1 score.
+```{r evaluate-models, echo=TRUE, message=FALSE, warning=FALSE}
+# Make predictions on the train set using the models just to evaluate their performance.
+# I will use the train set later for the final model's predictions.
+predictions_model1 <- predict(model1, newdata = train, type = "response")
+predictions_model2 <- predict(model2, newdata = train, type = "response")
+predictions_model3 <- predict(model3, newdata = train_matrix)
+
+# Convert predictions to binary values (0 or 1) using a threshold of 0.5
+predictions_model1_binary <- ifelse(predictions_model1 > 0.5, 1, 0)
+predictions_model2_binary <- ifelse(predictions_model2 > 0.5, 1, 0)
+predictions_model3_binary <- ifelse(predictions_model3 > 0.5, 1, 0)
+
+# Get the F1 score for each model
+f1_score_model1 <- F1_Score(y_true = train$relevanceJudge, y_pred = predictions_model1_binary)
+f1_score_model2 <- F1_Score(y_true = train$relevanceJudge, y_pred = predictions_model2_binary)
+f1_score_model3 <- F1_Score(y_true = train_label, y_pred = predictions_model3_binary)
+```
+```{r eval=FALSE}
+# Print the F1 scores
+cat("F1 Score for Model 1 (Logistic Regression): ", f1_score_model1, "\n")
+cat("F1 Score for Model 2 (Logistic Regression with interaction terms): ", f1_score_model2, "\n")
+cat("F1 Score for Model 3 (XGBoost Model): ", f1_score_model3, "\n")
+```
+```{r f1-scores, echo=FALSE, message=FALSE, warning=FALSE}
+# Print the F1 scores
+cat("F1 Score for Model 1 (Logistic Regression): ", f1_score_model1, "\n")
+cat("F1 Score for Model 2 (Logistic Regression with interaction terms): ", f1_score_model2, "\n")
+cat("F1 Score for Model 3 (XGBoost Model): ", f1_score_model3, "\n")
+```
+
+From the output of the code chunk above, we can see that the first and the second model that used logistic regression have the same F1 score rounded up to 2 decimal places - 0.96.
+The third model that used XGBoost performed better than the preceding two models with an F1 score of 0.99, rounded up to 2 decimal places.
+
+## Final Model Improvements
+I will now try to improve the XGBoost model further, which has an exact F1 score of 0.9854909.
+I will filter out any outliers in the dataset, deal with missing values, and select the most important features based on the feature importance from the XGBoost model.
+```{r final-model-improvements, echo=TRUE, message=FALSE, warning=FALSE}
+# Number of rows before filtering outliers and handling missing values
+cat("Number of rows before filtering outliers: ", nrow(train), "\n")
+
+# Columns to omit rows with NA values
+columns_for_na_omit <- c("length", "nFollowers", "nFriends", "isVerified")
+
+# Columns to calculate mean for missing values
+columns_for_mean <- c("text_score", "text_score_expansion",
+  "twitterAge", "X.tweetsPosted")
+
+# Columns to get mode for missing values
+columns_for_mode <- c("nFavorites", "nListed")
+
+# Handle missing values by getting either omitting the row, calculating the mean, or getting the mode of the column
+train_filtered <- train %>%
+  filter(if_all(all_of(columns_for_na_omit), ~ !is.na(.)))
+
+train_filtered <- train_filtered %>%
+  mutate(across(all_of(columns_for_mean),
+                ~ ifelse(is.na(.), mean(., na.rm = TRUE), .)))
+
+train_filtered <- train_filtered %>%
+  mutate(across(all_of(columns_for_mode),
+                ~ ifelse(is.na(.), as.numeric(names(sort(table(.), decreasing = TRUE)[1])), .)))
+
+# Number of rows after handling missing values
+cat("Number of rows after handling missing values: ", nrow(train_filtered), "\n")
+
+# Select columns to filter outliers
+columns_to_filter <- c("text_score", "text_score_expansion",
+  "length", "nFollowers", "nFriends",
+  "nFavorites", "nListed", "twitterAge", "X.tweetsPosted")
+
+# Filter out outliers based on the interquartile range (IQR)
+train_filtered <- train_filtered %>%
+  filter(across(all_of(columns_to_filter), ~ . >= quantile(., 0.05) & . <= quantile(., 0.95)))
+
+# Number of rows after filtering outliers
+cat("Number of rows after filtering outliers: ", nrow(train_filtered), "\n")
+```
+
+Now I will build the final XGBoost model using the filtered dataset and the most important features from the previous XGBoost model.
+```{r build-final-xgboost-model, echo=TRUE, message=FALSE, warning=FALSE}
+# Prepare the data for XGBoost
+importance_matrix <- xgb.importance(model = model3)
+
+# Select the 10 most important features
+top_features <- importance_matrix$Feature[1:10]
+train_matrix_final <- model.matrix(relevanceJudge ~ ., data = train_filtered[, c(top_features, "relevanceJudge")])[, -1]
+train_label_final <- train_filtered$relevanceJudge
+
+# Build the final XGBoost model
+model_final <- xgboost(data = train_matrix_final, label = train_label_final, 
+                       nrounds = 100, objective = "binary:logistic",
+                       eval_metric = "logloss", verbose = 0)
+
+# Check the importance of the features in the final model
+cat("Feature importance of the final XGBoost model: \n")
+print(xgb.importance(model = model_final))
+
+# Check the F1 score of the final model
+predictions_final <- predict(model_final, newdata = train_matrix_final)
+predictions_final_binary <- ifelse(predictions_final > 0.5, 1, 0)
+f1_score_final <- F1_Score(y_true = train_label_final, y_pred = predictions_final_binary)
+cat("F1 Score for the final XGBoost model: ", f1_score_final, "\n")
+```
+
+By handling missing values and filtering out outliers, the final XGBoost model has an exact F1 score of 0.9880673, which is a 0.0025764 improvement from the previous XGBoost model's F1 score of 0.9854909.
+
+### Justifications of the Final Model
+As per [@gradient-boosting], "Gradient boosting is an ensemble learning algorithm that produces accurate predictions by combining multiple decision trees into a single model."
+Essentially, the algorithm builds a series of decision trees that corrects the errors of the preceding trees, which makes it a powerful model for complex datasets.
+I figured that this type of algorithm is particularly useful for this dataset because a decision tree applies for such classification tasks.
+
+Hence, I've decided to use XGBoost model as one of the three models that I built because it is a powerful implementation of gradient boosting that can handle datasets of all sizes and complex relationships between features.
+It also has built-in regularization to prevent overfitting, which is important for this dataset with many features. Given that this is a provided dataset and I do not have any prior knowledge of the data, XGBoost
+was a great choice as it does well in handling datasets where the relationship between predictors and the outcome is complex. (@xgboost)
+
+As mentioned earlier, the initial XGBoost model already had an F1 score of 0.99, rounded up to 2 decimal places.
+There wasn't much room for improvement, but I was able to improve the F1 score by 0.0025764 by filtering out outliers and handling missing values.
+I chose follow that method because it is a common yet a reliably effective way to improve the performance of a model, even if it already has an accuracy of close to 100%.
+And since I haven't performed those preprocessing steps yet, I thought it was the best choice to improve the model's performance.
+
+## Predictions on the Testing Set
+Finally, I will use the final XGBoost model to make predictions on the testing set and save the results in its corresponding CSV file.
+```{r predict-on-testing-set, echo=TRUE, message=FALSE, warning=FALSE}
+library(dplyr)
+
+original_test <- read.csv("predictive_twitter_test.csv")
+test <- original_test %>%
+  rename(nFavorites = nFavorties)
+
+for (col in top_features) {
+  if (is.numeric(test[[col]])) {
+    test[[col]][is.na(test[[col]])] <- mean(test[[col]], na.rm = TRUE)
+  }
+}
+
+# Make model matrix for XGBoost and predict
+test_matrix <- model.matrix(~ . - 1, data = test[, top_features])
+predictions <- predict(model_final, newdata = test_matrix)
+predictions_binary <- ifelse(predictions > 0.5, 1, 0)
+
+original_test$relevanceJudge <- predictions_binary
+write.csv(original_test, "predictive_twitter_test.csv", row.names = FALSE)
+
+cat("Number of relevant tweets in the test set: ", 
+    sum(original_test$relevanceJudge == 1), "\n")
+
+cat("Number of irrelevant tweets in the test set: ", 
+    sum(original_test$relevanceJudge == 0), "\n")
+```
+\newpage
+# References

@@ -2,8 +2,8 @@
 title: "Part A, Topic 2 - Olympic Tweets"
 author: "Lance Belen"
 date: "2 June 2025"
-
 output:
+  
   pdf_document:
     includes:
       in_header: header.tex
@@ -11,7 +11,6 @@ output:
     number_sections: true
     keep_tex: true
   html_document: default
-  
 bibliography: references.bib
 csl: apa-7th-edition.csl
 ---
@@ -352,7 +351,7 @@ In this section, I will build machine learning models to predict whether a tweet
 I will use the glm function to build a logistic regression models using all of the features from the dataset.
 The glm function is used to fit generalized linear models, which can be used for binary classification tasks like this one.
 Next, I will try to use interaction terms to see if that can improve the same model's performance.
-FInally, I will use the xgboost package to build a gradient boosting model to also evaluate how it performs compared to the logistic regression models.
+Finally, I will use the xgboost package to build a gradient boosting model to also evaluate how it performs compared to the logistic regression models.
 
 First, I will make sure that the dependent variable is numeric and has only two values, 0 and 1.
 Luckily, the dataset has already been split into training and testing sets, so I will use the training set to build the models and the testing set to evaluate them.
@@ -555,7 +554,7 @@ was a great choice as it does well in handling datasets where the relationship b
 
 As mentioned earlier, the initial XGBoost model already had an F1 score of 0.99, rounded up to 2 decimal places.
 There wasn't much room for improvement, but I was able to improve the F1 score by 0.0025764 by filtering out outliers and handling missing values.
-I chose follow that method because it is a common yet a reliably effective way to improve the performance of a model, even if it already has an accuracy of close to 100%.
+I chose to follow that method because it is a common yet reliably effective way to improve the performance of a model, even if it already has an accuracy of close to 100%.
 And since I haven't performed those preprocessing steps yet, I thought it was the best choice to improve the model's performance.
 
 ## Predictions on the Testing Set

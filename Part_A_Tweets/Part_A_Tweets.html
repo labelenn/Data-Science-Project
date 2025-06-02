@@ -9,6 +9,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
 
 
+<meta name="author" content="Lance Belen" />
 
 <meta name="date" content="2025-06-02" />
 
@@ -373,10 +374,7 @@ display: none;
 
 
 <h1 class="title toc-ignore">Part A, Topic 2 - Olympic Tweets</h1>
-<h4 class="author"><p>Lance Belen<br />
-ITO5145 - Introduction to Data Science<br />
-Master of Applied Data Science<br />
-Monash University</p></h4>
+<h4 class="author">Lance Belen</h4>
 <h4 class="date">2 June 2025</h4>
 
 </div>
@@ -895,7 +893,7 @@ a logistic regression models using all of the features from the dataset.
 The glm function is used to fit generalized linear models, which can be
 used for binary classification tasks like this one. Next, I will try to
 use interaction terms to see if that can improve the same model’s
-performance. FInally, I will use the xgboost package to build a gradient
+performance. Finally, I will use the xgboost package to build a gradient
 boosting model to also evaluate how it performs compared to the logistic
 regression models.</p>
 <p>First, I will make sure that the dependent variable is numeric and
@@ -1428,8 +1426,8 @@ outcome is complex. (<span class="citation">Hachcham (2025)</span>)</p>
 <p>As mentioned earlier, the initial XGBoost model already had an F1
 score of 0.99, rounded up to 2 decimal places. There wasn’t much room
 for improvement, but I was able to improve the F1 score by 0.0025764 by
-filtering out outliers and handling missing values. I chose follow that
-method because it is a common yet a reliably effective way to improve
+filtering out outliers and handling missing values. I chose to follow
+that method because it is a common yet reliably effective way to improve
 the performance of a model, even if it already has an accuracy of close
 to 100%. And since I haven’t performed those preprocessing steps yet, I
 thought it was the best choice to improve the model’s performance.</p>
@@ -1471,11 +1469,11 @@ cat(&quot;Number of relevant tweets in the test set: &quot;,
 <div id="references" class="section level1 unnumbered">
 <h1 class="unnumbered">References</h1>
 <div id="refs" class="references csl-bib-body hanging-indent" entry-spacing="0" line-spacing="2">
-<div id="ref-gradientboosting" class="csl-entry">
-Clark, B., &amp; Lee, F. (2025). <em>What is Gradient Boosting?</em> <a href="https://www.ibm.com/think/topics/gradient-boosting">https://www.ibm.com/think/topics/gradient-boosting</a>
+<div id="ref-gradient-boosting" class="csl-entry">
+Clark, B., &amp; Lee, F. (2025). <em>What is gradient boosting?</em> <a href="https://www.ibm.com/think/topics/gradient-boosting">https://www.ibm.com/think/topics/gradient-boosting</a>
 </div>
 <div id="ref-xgboost" class="csl-entry">
-Hachcham, A. (2025). <em>XGBoost: Everything You Need to Know</em>. <a href="https://neptune.ai/blog/xgboost-everything-you-need-to-know">https://neptune.ai/blog/xgboost-everything-you-need-to-know</a>
+Hachcham, A. (2025). <em>XGBoost: Everything you need to know</em>. <a href="https://neptune.ai/blog/xgboost-everything-you-need-to-know">https://neptune.ai/blog/xgboost-everything-you-need-to-know</a>
 </div>
 </div>
 </div>

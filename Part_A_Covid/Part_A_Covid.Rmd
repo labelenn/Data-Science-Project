@@ -2,16 +2,15 @@
 title: "Part A, Topic 1 - COVID-19"
 author: "Lance Belen"
 date: "2 June 2025"
-
 output:
+  
+  html_document: default
   pdf_document:
     includes:
       in_header: header.tex
     toc: true
     number_sections: true
     keep_tex: true
-  html_document: default
-  
 bibliography: references.bib
 csl: apa-7th-edition.csl
 ---

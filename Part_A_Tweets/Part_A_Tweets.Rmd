@@ -1,15 +1,19 @@
 ---
 title: "Part A, Topic 2 - Olympic Tweets"
-author: "Lance Belen"
-date: "`r Sys.Date()`"
+author: |
+  Lance Belen  
+  Master of Applied Data Science  
+  Monash University
+date: "2 June 2025"
+
 output:
   pdf_document:
-    includes:
-      in_header: header.tex
     toc: true
     number_sections: true
     keep_tex: true
+    latex_engine: xelatex
   html_document: default
+  
 nocite: '@*'
 csl: https://www.zotero.org/styles/apa
 references:
@@ -34,13 +38,11 @@ references:
     url: "https://neptune.ai/blog/xgboost-everything-you-need-to-know"
     type: webpage
 ---
-
-
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
-
 \newpage
+
 # Data Wrangling, Visualisatsion, and Analysis
 First, load the packages needed.
 ```{r load-packages, echo=TRUE, message=FALSE, warning=FALSE}

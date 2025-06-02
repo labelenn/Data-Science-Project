@@ -1,21 +1,25 @@
 ---
 title: "Part A, Topic 1 - COVID-19"
 author: "Lance Belen"
-date: "`r Sys.Date()`"
+date: "2 June 2025"
+
 output:
-  html_document: default
   pdf_document:
     includes:
       in_header: header.tex
     toc: true
     number_sections: true
+    keep_tex: true
+  html_document: default
+  
+bibliography: references.bib
+csl: apa-7th-edition.csl
 ---
-
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
-
 \newpage
+
 # Data Wrangling and Integration
 
 First, load the packages needed.
@@ -347,18 +351,18 @@ data %>%
 
 The first occurrence of a notable observation of new cases is in China,
 which reflects the fact that it is the origin of the novel coronavirus outbreak,
-also known as COVID-19 (Centers for Disease Control and Prevention, 2024).
+also known as COVID-19 (@covidtimeline).
 A significant increase can also be seen in the United States, compared to other countries in the dataset,
 which started after about a month since China’s spike.
 This event forced a declaration in the United States for a nationwide emergency and further overseas
-travel bans on the 13th of March, 2020. (Centers for Disease Control and Prevention, 2024).
+travel bans on the 13th of March, 2020. (@covidtimeline).
 By August 2020, the reported total number of cases in U.S.A. was 5.04 million, which is evident of the
-prolonged large number of new cases daily as seen in the plot (Bergquist, S., Otten, T., & Sarich, N., 2020).
+prolonged large number of new cases daily as seen in the plot (@covidUSA).
 
 Apart from the two significant findings previously mentioned, it can also be seen that the trend of the number
 of new cases are similar among the European countries. By February 2020, the virus has reached Europe, with Italy
 being the first to react with lockdowns in different provinces as cases began to rise. By April 2020, numerous
-countries in Europe have reached 10,000 total cases, which is also evident in the plot (Chadwick, L., 2020)
+countries in Europe have reached 10,000 total cases, which is also evident in the plot (@covidEU)
 
 The observed shift in the increase of new cases from China to other countries supports 
 the fact that the outbreak originated in China. As international travel occurs daily,
@@ -421,7 +425,7 @@ ggplot(data, aes(x = new_case_rate, y = new_death_rate, color = factor(GDP_Statu
 ```
 
 The Gross Domestic Product, or GDP, is a representation of the monetary value of goods and services produced by a country in a
-specified period. (Callen, T., 2025) If this value is to be divided by the total population of a country, we would get the GDP per capita,
+specified period. (@gdp) If this value is to be divided by the total population of a country, we would get the GDP per capita,
 which is the number that we have in our dataset that represents a rough measure of a country’s living standards, or simply, the
 financial capability of a person in the country.
 
@@ -431,12 +435,12 @@ and data systems, leading to underreporting of the number of new cases and death
 as the life expectancy and tourist spending being significantly lower than those that have average or greater GDP per capita.
 To provide an example:
 
-- Luxembourg is identified as having the highest GDP per capita. Burundi is identified as having the lowest estimated GDP per capita. (The World Factbook, 2023).\newline
+- Luxembourg is identified as having the highest GDP per capita. Burundi is identified as having the lowest estimated GDP per capita. (@worldgdp).\newline
 - Life expectancy in Luxembourg is 82.8 years. Burundi’s is 64 years. Almost 20 years difference (World Health Organisation, 2023).\newline
-- Luxembourg tourist spending for 2017 was 5.47 billion US Dollars (macrotrends, 2025). Burundi tourist spending for 2017 was 0.1 billion US dollars. (Knoema Data Appliance, 2025).
+- Luxembourg tourist spending for 2017 was 5.47 billion US Dollars (@luxembourgtourism). Burundi tourist spending for 2017 was 0.1 billion US dollars. (@burunditourism).
 
 Overseas travel played a major role in the global spread of COVID-19 as rapid transmission across borders occurred. In 2020, the death rate from the virus
-for those that are aged 85 and over was 1,645 per 100,000 population -- seven times greater than the rate for those aged 65 to 74. (Tejada-Vera, B. & Kramarow, A., 2022).
+for those that are aged 85 and over was 1,645 per 100,000 population -- seven times greater than the rate for those aged 65 to 74. (@covidmortality).
 
 # Predictive Data Analaysis
 For this part, I will be fitting a model to make predictions on the newly infected case and death case numbers for the next five to seven days.
@@ -774,3 +778,6 @@ the noise from irrelevant or redundant features, allowing the model to focus on 
 may not yield better performance especially if the underlying patterns remain volatile. Thus, refining the quality of the input data and ensuring
 the model does not overly rely on extreme values are more practical approaches to improve the model's predictive capabilities.
 \vspace{1cm}
+\newpage
+
+# References

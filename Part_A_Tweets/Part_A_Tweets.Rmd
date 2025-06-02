@@ -1,42 +1,19 @@
 ---
 title: "Part A, Topic 2 - Olympic Tweets"
-author: |
-  Lance Belen  
-  Master of Applied Data Science  
-  Monash University
+author: "Lance Belen"
 date: "2 June 2025"
 
 output:
   pdf_document:
+    includes:
+      in_header: header.tex
     toc: true
     number_sections: true
     keep_tex: true
-    latex_engine: xelatex
   html_document: default
   
-nocite: '@*'
-csl: https://www.zotero.org/styles/apa
-references:
-  - id: gradientboosting
-    title: "What is Gradient Boosting?"
-    author:
-      - family: "Clark"
-        given: "Bryan"
-      - family: "Lee"
-        given: "Fangfang"
-    issued:
-      - year: 2025
-    url: "https://www.ibm.com/think/topics/gradient-boosting"
-    type: webpage
-  - id: xgboost
-    title: "XGBoost: Everything You Need to Know"
-    author:
-      - family: "Hachcham"
-        given: "Aymane"
-    issued:
-      - year: 2025
-    url: "https://neptune.ai/blog/xgboost-everything-you-need-to-know"
-    type: webpage
+bibliography: references.bib
+csl: apa-7th-edition.csl
 ---
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
@@ -568,7 +545,7 @@ cat("F1 Score for the final XGBoost model: ", f1_score_final, "\n")
 By handling missing values and filtering out outliers, the final XGBoost model has an exact F1 score of 0.9880673, which is a 0.0025764 improvement from the previous XGBoost model's F1 score of 0.9854909.
 
 ### Justifications of the Final Model
-As per [@gradientboosting], "Gradient boosting is an ensemble learning algorithm that produces accurate predictions by combining multiple decision trees into a single model."
+As per [@gradient-boosting], "Gradient boosting is an ensemble learning algorithm that produces accurate predictions by combining multiple decision trees into a single model."
 Essentially, the algorithm builds a series of decision trees that corrects the errors of the preceding trees, which makes it a powerful model for complex datasets.
 I figured that this type of algorithm is particularly useful for this dataset because a decision tree applies for such classification tasks.
 
